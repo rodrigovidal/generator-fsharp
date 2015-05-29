@@ -3,6 +3,7 @@ var yeoman = require('yeoman-generator');
 var yosay = require('yosay');
 var chalk = require('chalk');
 var path = require('path');
+var fs = require('fs');
 var FSharpGenerator = yeoman.generators.Base.extend({
 
     username: 'Krzysztof-Cieslak',
@@ -21,38 +22,19 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         this.templatedata = {};
         this.remote(this.username, this.repo, this.branch, function (err,r) {
             done();
-        })
+        }, true)
     },
 
     askFor: function() {
         var done = this.async();
         var p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, 'templates.json')
-        var choices = require(p)
+        var choices = JSON.parse(fs.readFileSync(p, "utf8"));
         this.log(choices);
         var prompts = [{
             type: 'list',
             name: 'type',
             message: 'What type of application do you want to create?',
-            choices: [{
-                name: 'Empty Application',
-                value: 'empty'
-            }, {
-                name: 'Console Application',
-                value: 'console'
-            }, {
-                name: 'Web Application',
-                value: 'web'
-            }, {
-                name: 'Web API Application',
-                value: 'webapi'
-            }, {
-                name: 'Nancy ASP.NET Application',
-                value: 'nancy'
-            }, {
-                name: 'Class Library',
-                value: 'classlib'
-            },
-        ]
+            choices: choices.Templates
         }];
 
         this.prompt(prompts, function(props) {
@@ -92,25 +74,45 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     },
 
     writing: function() {
-        this.sourceRoot(path.join(__dirname, './templates/projects'));
+        var p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, this.type)
+        this.sourceRoot(p);
+        var log = this.log
+        var appName = this.applicationName;
+        var t = function self(dirPath, targetDirPath){
+            var files = fs.readdirSync(p);
+            files.forEach(function(f){
+                var fp = path.join(dirPath, f);
 
-        switch (this.type) {
-            case 'console':
-                this.sourceRoot(path.join(__dirname, '../templates/' + this.type));
-                this.copy(this.sourceRoot() + '/App.config', this.applicationName + '/App.config');
-                this.template(this.sourceRoot() + '/Program.fs', this.applicationName + '/Program.fs', this.templatedata);
-                this.template(this.sourceRoot() + '/ConsoleApplication1.fsproj', this.applicationName + '/' + this.applicationName + '.fsproj', this.templatedata);
-                break;
+                if(fs.statSync(fp).isDirectory()) {
+                     var newTargetPath = path.join(targetDirPath, f);
+                     self(fp, newTargetPath);
+                }
+                else {
+                    var fn = f.replace("ApplicationName", appName);
 
-            case 'classlib':
-                this.sourceRoot(path.join(__dirname, '../templates/' + this.type));
-                this.template(this.sourceRoot() + '/Script.fsx', this.applicationName + '/Script.fsx', this.templatedata);
-                this.template(this.sourceRoot() + '/Library1.fs', this.applicationName + '/' + this.applicationName + '.fs', this.templatedata);
-                this.template(this.sourceRoot() + '/Library1.fsproj', this.applicationName + '/' + this.applicationName + '.fsproj', this.templatedata);
-                break;
-            default:
-                this.log('Unknown project type');
-        }
+                    log("FILE: " + fn);
+                }
+
+            })
+        };
+        t(p);
+
+
+        // switch (this.type) {
+        //     case 'console':
+        //         this.copy(this.sourceRoot() + '/App.config', this.applicationName + '/App.config');
+        //         this.template(this.sourceRoot() + '/Program.fs', this.applicationName + '/Program.fs', this.templatedata);
+        //         this.template(this.sourceRoot() + '/ConsoleApplication1.fsproj', this.applicationName + '/' + this.applicationName + '.fsproj', this.templatedata);
+        //         break;
+        //
+        //     case 'classlib':
+        //         this.template(this.sourceRoot() + '/Script.fsx', this.applicationName + '/Script.fsx', this.templatedata);
+        //         this.template(this.sourceRoot() + '/Library1.fs', this.applicationName + '/' + this.applicationName + '.fs', this.templatedata);
+        //         this.template(this.sourceRoot() + '/Library1.fsproj', this.applicationName + '/' + this.applicationName + '.fsproj', this.templatedata);
+        //         break;
+        //     default:
+        //         this.log('Unknown project type');
+        // }
     },
 
     end: function() {
