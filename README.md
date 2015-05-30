@@ -40,9 +40,7 @@ Finally, initiate the generator:
 yo fsharp
 ```
 
-
-
-## Contributing and copyright
+### Contributing and copyright
 
 The project is hosted on [GitHub](https://github.com/fsprojects/generator-fsharp) where you can [report issues](https://github.com/fsprojects/generator-fsharp/issues), fork
 the project and submit pull requests on the [develop branch](https://github.com/fsprojects/generator-fsharp/tree/develop).
